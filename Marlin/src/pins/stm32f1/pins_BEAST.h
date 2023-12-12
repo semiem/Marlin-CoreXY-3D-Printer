@@ -24,7 +24,7 @@
 #include "env_validate.h"
 
 /**
- * 21017 Victor Perez Marlin for stm32f1 test
+ * 2017 Victor Perez Marlin for stm32f1 test
  */
 
 #define BOARD_INFO_NAME      "Beast STM32"
@@ -131,7 +131,7 @@
       #error "LCD_I2C_PANELOLU2 is not supported."
     #elif ENABLED(LCD_I2C_VIKI)
       #error "LCD_I2C_VIKI is not supported."
-    #elif EITHER(VIKI2, miniVIKI)
+    #elif ANY(VIKI2, miniVIKI)
       #error "VIKI2 / miniVIKI is not supported."
     #elif ENABLED(ELB_FULL_GRAPHIC_CONTROLLER)
       #error "ELB_FULL_GRAPHIC_CONTROLLER is not supported."

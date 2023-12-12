@@ -33,6 +33,13 @@
 
 #if ENABLED(MARLIN_DEV_MODE)
   #warning "WARNING! Disable MARLIN_DEV_MODE for the final build!"
+  #ifdef __LONG_MAX__
+    #if __LONG_MAX__ > __INT_MAX__
+      #warning "The 'long' type is larger than the 'int' type on this platform."
+    #else
+      #warning "The 'long' type is the same as the 'int' type on this platform."
+    #endif
+  #endif
 #endif
 
 #if ENABLED(LA_DEBUG)
@@ -58,6 +65,9 @@
 #endif
 #if HAS_COOLER && DISABLED(THERMAL_PROTECTION_COOLER)
   #warning "Safety Alert! Enable THERMAL_PROTECTION_COOLER for the final build!"
+#endif
+#if ENABLED(IGNORE_THERMOCOUPLE_ERRORS)
+  #warning "Safety Alert! Disable IGNORE_THERMOCOUPLE_ERRORS for the final build!"
 #endif
 #if ANY_THERMISTOR_IS(998) || ANY_THERMISTOR_IS(999)
   #warning "Warning! Don't use dummy thermistors (998/999) for final build!"
@@ -687,24 +697,24 @@
 /**
  * FYSETC/MKS/BTT Mini Panel backlighting
  */
-#if EITHER(FYSETC_242_OLED_12864, FYSETC_MINI_12864_2_1) && !ALL(NEOPIXEL_LED, LED_CONTROL_MENU, LED_USER_PRESET_STARTUP, LED_COLOR_PRESETS)
+#if ANY(FYSETC_242_OLED_12864, FYSETC_MINI_12864_2_1) && !ALL(NEOPIXEL_LED, LED_CONTROL_MENU, LED_USER_PRESET_STARTUP, LED_COLOR_PRESETS)
   #warning "Your FYSETC/MKS/BTT Mini Panel works best with NEOPIXEL_LED, LED_CONTROL_MENU, LED_USER_PRESET_STARTUP, and LED_COLOR_PRESETS."
 #endif
 
-#if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0) && DISABLED(RGB_LED)
+#if ANY(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0) && DISABLED(RGB_LED)
   #warning "Your FYSETC Mini Panel works best with RGB_LED."
-#elif EITHER(FYSETC_MINI_12864_2_0, FYSETC_MINI_12864_2_1) && DISABLED(LED_USER_PRESET_STARTUP)
+#elif ANY(FYSETC_MINI_12864_2_0, FYSETC_MINI_12864_2_1) && DISABLED(LED_USER_PRESET_STARTUP)
   #warning "Your FYSETC Mini Panel works best with LED_USER_PRESET_STARTUP."
 #endif
 
-#if EITHER(FYSETC_242_OLED_12864, FYSETC_MINI_12864) && BOTH(PSU_CONTROL, HAS_COLOR_LEDS) && !LED_POWEROFF_TIMEOUT
+#if ANY(FYSETC_242_OLED_12864, FYSETC_MINI_12864) && ALL(PSU_CONTROL, HAS_COLOR_LEDS) && !LED_POWEROFF_TIMEOUT
   #warning "Your FYSETC display with PSU_CONTROL works best with LED_POWEROFF_TIMEOUT."
 #endif
 
 /**
  * Maple environment
  */
-#ifdef __STM32F1__
+#if defined(__STM32F1__) && DISABLED(NO_MAPLE_WARNING)
   #warning "Maple build environments are deprecated. Please use a non-Maple build environment. Report issues to the Marlin Firmware project."
 #endif
 
@@ -730,9 +740,16 @@
 #endif
 
 /**
+ * EP Babystepping works best with EMERGENCY_PARSER
+ */
+#if ENABLED(EP_BABYSTEPPING) && DISABLED(EMERGENCY_PARSER)
+  #warning "EMERGENCY_PARSER is recommended for EP_BABYSTEPPING."
+#endif
+
+/**
  * POLAR warnings
  */
-#if BOTH(POLAR, S_CURVE_ACCELERATION)
+#if ALL(POLAR, S_CURVE_ACCELERATION)
   #warning "POLAR kinematics may not work well with S_CURVE_ACCELERATION."
 #endif
 
@@ -743,10 +760,16 @@
   #warning "Input Shaping for CORE / MARKFORGED kinematic axes is still experimental."
 #endif
 
+/**
+ * Automatic Multistepping Limit
+ */
 #if MULTISTEPPING_LIMIT_WARNING
   #warning "MULTISTEPPING_LIMIT has been automatically set to 128. Use a lower value if the machine is slow to respond."
 #endif
 
+/**
+ * SD Card extras
+ */
 #if SDSORT_CACHE_VFATS_WARNING
   #warning "SDSORT_CACHE_VFATS has been reduced to VFAT_ENTRIES_LIMIT."
 #endif
@@ -761,6 +784,23 @@
   #warning "Place the firmware bin file in a folder named 'STM32F4_UPDATE' on the SD card. Install with 'M936 V2'."
 #endif
 
+/**
+ * Voxelab N32 bootloader
+ */
+#ifdef SDCARD_FLASH_LIMIT_256K
+  #warning "This board has 512K but the bootloader can only flash firmware.bin <= 256K. ICSP required for full 512K capacity."
+#endif
+
+/**
+ * ProUI Boot Screen Duration
+ */
 #if ENABLED(DWIN_LCD_PROUI) && BOOTSCREEN_TIMEOUT > 2000
   #warning "For ProUI the original BOOTSCREEN_TIMEOUT of 1100 is recommended."
+#endif
+
+/**
+ * AD595 Minimum Voltage
+ */
+#if HAL_ADC_VREF_MV < 5000 && ANY_THERMISTOR_IS(-1) && DISABLED(ALLOW_AD595_3V3_VREF)
+  #warning "The (-1) AD595 Thermocouple Amplifier requires 5V input supply! Use AD8495 for 3.3V ADC."
 #endif

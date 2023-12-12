@@ -135,7 +135,7 @@
 
 #define FAN0_PIN                            PB14  // FAN
 #define FAN1_PIN                            PB12  // FAN
-#define FAN_SOFT_PWM
+#define FAN_SOFT_PWM_REQUIRED
 
 //
 // SD Card
@@ -168,7 +168,7 @@
   #define EXP3_07_PIN                       PB12
   #define EXP3_08_PIN                       PB15
 
-#elif EITHER(VET6_12864_LCD, DWIN_VET6_CREALITY_LCD)
+#elif ANY(VET6_12864_LCD, DWIN_VET6_CREALITY_LCD)
 
   /**
    *    VET6 12864 LCD

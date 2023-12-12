@@ -311,7 +311,7 @@
       #define DOGLCD_A0              EXP1_04_PIN
       //#define LCD_BACKLIGHT_PIN           -1
       #define LCD_RESET_PIN          EXP1_05_PIN  // Must be high or open for LCD to operate normally.
-      #if EITHER(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
+      #if ANY(FYSETC_MINI_12864_1_2, FYSETC_MINI_12864_2_0)
         #ifndef RGB_LED_R_PIN
           #define RGB_LED_R_PIN      EXP1_06_PIN
         #endif
@@ -336,7 +336,7 @@
     #endif
 
   #endif
-#endif  // HAS_WIRED_LCD
+#endif // HAS_WIRED_LCD
 
 // Alter timing for graphical display
 #if IS_U8GLIB_ST7920

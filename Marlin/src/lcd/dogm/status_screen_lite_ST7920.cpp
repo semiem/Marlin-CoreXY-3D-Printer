@@ -237,7 +237,7 @@ void ST7920_Lite_Status_Screen::clear_ddram() {
 
 /* This fills the entire graphics buffer with zeros */
 void ST7920_Lite_Status_Screen::clear_gdram() {
-  LOOP_L_N(y, BUFFER_HEIGHT) {
+  for (uint8_t y = 0; y < BUFFER_HEIGHT; ++y) {
     set_gdram_address(0, y);
     begin_data();
     for (uint8_t i = (BUFFER_WIDTH) / 16; i--;) write_word(0);
@@ -435,7 +435,7 @@ void ST7920_Lite_Status_Screen::draw_degree_symbol(uint8_t x, uint8_t y, const b
     const uint8_t x_word  = x >> 1,
                   y_top   = degree_symbol_y_top,
                   y_bot   = y_top + COUNT(degree_symbol);
-    LOOP_S_L_N(i, y_top, y_bot) {
+    for (uint8_t i = y_top; i < y_bot; ++i) {
       uint8_t byte = pgm_read_byte(p_bytes++);
       set_gdram_address(x_word, i + y * 16);
       begin_data();
@@ -568,16 +568,14 @@ void ST7920_Lite_Status_Screen::draw_feedrate_percentage(const uint16_t percenta
 }
 
 void ST7920_Lite_Status_Screen::draw_status_message() {
-  const char *str = ui.status_message;
-
   set_ddram_address(DDRAM_LINE_4);
   begin_data();
   #if ENABLED(STATUS_MESSAGE_SCROLLING)
-    uint8_t slen = utf8_strlen(str);
+    uint8_t slen = ui.status_message.glyphs();
 
     if (slen <= TEXT_MODE_LCD_WIDTH) {
       // String fits the LCD, so just print it
-      write_str(str);
+      write_str(ui.status_message);
       while (slen < TEXT_MODE_LCD_WIDTH) { write_byte(' '); ++slen; }
     }
     else {  // String is larger than the available space in ST7920_Lite_Status_Screen::
@@ -595,7 +593,7 @@ void ST7920_Lite_Status_Screen::draw_status_message() {
           write_byte(' ');
           if (--chars) {                            // Draw a third space if there's room
             write_byte(' ');
-            if (--chars) write_str(str, chars);     // Print a second copy of the message
+            if (--chars) write_str(ui.status_message, chars);  // Print a second copy of the message
           }
         }
       }
@@ -604,8 +602,8 @@ void ST7920_Lite_Status_Screen::draw_status_message() {
 
   #else
 
-    uint8_t slen = utf8_strlen(str);
-    write_str(str, TEXT_MODE_LCD_WIDTH);
+    uint8_t slen = ui.status_message.glyphs();
+    write_str(ui.status_message, TEXT_MODE_LCD_WIDTH);
     for (; slen < TEXT_MODE_LCD_WIDTH; ++slen) write_byte(' ');
 
   #endif
@@ -666,15 +664,17 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
 #if HAS_PRINT_PROGRESS
   static char screenstr[8];
 
-  char * ST7920_Lite_Status_Screen::prepare_time_string(const duration_t &time, char prefix) {
-    static char str[6];
-    memset(&screenstr, 0x20, 8); // fill with spaces to avoid artifacts, not doing right-justification to save cycles
-    screenstr[0] = prefix;
-    TERN_(HOTENDS == 1, screenstr[1] = 0x07;)  // add bullet • separator when there is space
-    int str_length = time.toDigital(str);
-    memcpy(&screenstr[TERN(HOTENDS == 1, 2, 1)], str, str_length); //memcpy because we can't have terminator
-    return screenstr;
-  }
+  #if HAS_TIME_DISPLAY
+    char * ST7920_Lite_Status_Screen::prepare_time_string(const duration_t &time, char prefix) {
+      static char str[6];
+      memset(&screenstr, ' ', 8); // fill with spaces to avoid artifacts, not doing right-justification to save cycles
+      screenstr[0] = prefix;
+      TERN_(HOTENDS == 1, screenstr[1] = 0x07;)  // add bullet • separator when there is space
+      int str_length = time.toDigital(str);
+      memcpy(&screenstr[TERN(HOTENDS == 1, 2, 1)], str, str_length); //memcpy because we can't have terminator
+      return screenstr;
+    }
+  #endif
 
   void ST7920_Lite_Status_Screen::draw_progress_string(uint8_t addr, const char *str) {
     set_ddram_address(addr);
@@ -689,7 +689,7 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
     void ST7920_Lite_Status_Screen::drawPercent() {
       #define LSHIFT TERN(HOTENDS == 1, 0, 1)
       const uint8_t progress = ui.get_progress_percent();
-      memset(&screenstr, 0x20, 8); // fill with spaces to avoid artifacts
+      memset(&screenstr, ' ', 8); // fill with spaces to avoid artifacts
       if (progress){
         memcpy(&screenstr[2 - LSHIFT], \
                   TERN(PRINT_PROGRESS_SHOW_DECIMALS, permyriadtostr4(ui.get_progress_permyriad()), ui8tostr3rj(progress)), \
@@ -754,10 +754,10 @@ bool ST7920_Lite_Status_Screen::indicators_changed() {
     // This drawing is a mess and only produce readable result around 25% steps
     // i.e. 74-76% look fine [||||||||||||||||||||||||        ], but 73% look like this: [||||||||||||||||       |        ]
     // meaning partially filled bytes produce only single vertical line, and i bet they're not supposed to!
-    LOOP_S_LE_N(y, top, bottom) {
+    for (uint8_t y = top; y <= bottom; ++y) {
       set_gdram_address(left, y);
       begin_data();
-      LOOP_L_N(x, width) {
+      for (uint8_t x = 0; x < width; ++x) {
         uint16_t gfx_word = 0x0000;
         if ((x + 1) * char_pcnt <= value)
           gfx_word = 0xFFFF;                                              // Draw completely filled bytes
@@ -853,11 +853,10 @@ bool ST7920_Lite_Status_Screen::position_changed() {
 }
 
 bool ST7920_Lite_Status_Screen::status_changed() {
-  uint8_t checksum = 0;
-  for (const char *p = ui.status_message; *p; p++) checksum ^= *p;
-  static uint8_t last_checksum = 0;
-  bool changed = last_checksum != checksum;
-  if (changed) last_checksum = checksum;
+  static MString<>::hash_t last_hash = 0;
+  const MString<>::hash_t hash = ui.status_message.hash();
+  const bool changed = last_hash != hash;
+  if (changed) last_hash = hash;
   return changed;
 }
 
@@ -892,7 +891,7 @@ void ST7920_Lite_Status_Screen::update_status_or_position(bool forceUpdate) {
   if (forceUpdate || status_changed()) {
     TERN_(STATUS_MESSAGE_SCROLLING, ui.status_scroll_offset = 0);
     #if STATUS_EXPIRE_SECONDS
-      countdown = ui.status_message[0] ? STATUS_EXPIRE_SECONDS : 0;
+      countdown = !ui.status_message.empty() ? STATUS_EXPIRE_SECONDS : 0;
     #endif
     draw_status_message();
     blink_changed(); // Clear changed flag

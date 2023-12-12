@@ -212,7 +212,7 @@
     #define LCD_PINS_D6                       74
     #define LCD_PINS_D7                       75
 
-    #if EITHER(VIKI2, miniVIKI)
+    #if ANY(VIKI2, miniVIKI)
       #define BEEPER_PIN                      44
       // NB: Panucatt's Viki 2.0 wiring diagram (v1.2) indicates that the
       //     beeper/buzzer is connected to pin 33; however, the pin used in the
@@ -232,7 +232,7 @@
 
       #define LCD_SCREEN_ROTATE              180  // 0, 90, 180, 270
 
-    #else                                         // !VIKI2 && !miniVIKI
+    #else // !VIKI2 && !miniVIKI
 
       #define BEEPER_PIN                      79  // AUX-4
 
@@ -253,7 +253,7 @@
       #define BTN_ENC_EN             LCD_PINS_D7  // Detect the presence of the encoder
     #endif
 
-  #else                                           // !IS_NEWPANEL - old style panel with shift register
+  #else // !IS_NEWPANEL - old style panel with shift register
 
     // No Beeper added
     #define BEEPER_PIN                        33
