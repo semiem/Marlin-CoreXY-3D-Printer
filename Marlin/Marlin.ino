@@ -43,7 +43,7 @@ Getting Help
 
   - https://github.com/MarlinFirmware/Marlin/issues
     With a free GitHub account you can provide us with feedback, bug reports,
-    and feature requests via the Marlin Issue Queue.
+    and feature requests via the Marlin Issue Qc:\Users\FLOWER-PC\Desktop\Marlin-CoreXY-3D-Printer-main\Marlin-CoreXY-3D-Printer-main\Marlin\Configuration.h c:\Users\FLOWER-PC\Desktop\Marlin-CoreXY-3D-Printer-main\Marlin-CoreXY-3D-Printer-main\Marlin\Configuration_adv.hueue.
 
 Contributing
 
